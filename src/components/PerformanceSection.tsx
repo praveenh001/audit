@@ -29,6 +29,12 @@ interface PerformanceData {
   loadTime: number;
   pageSize: number;
   requests: number;
+  metrics?: {
+    firstContentfulPaint: number;
+    largestContentfulPaint: number;
+    cumulativeLayoutShift: number;
+    totalBlockingTime: number;
+  };
 }
 
 interface PerformanceSectionProps {
@@ -57,6 +63,24 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({ data }) => {
     }
   ];
 
+  // Add Core Web Vitals if available
+  const coreWebVitals = data.metrics ? [
+    {
+      name: 'First Contentful Paint',
+      value: `${(data.metrics.firstContentfulPaint / 1000).toFixed(2)}s`,
+      status: data.metrics.firstContentfulPaint < 1800 ? 'good' : data.metrics.firstContentfulPaint < 3000 ? 'fair' : 'poor'
+    },
+    {
+      name: 'Largest Contentful Paint',
+      value: `${(data.metrics.largestContentfulPaint / 1000).toFixed(2)}s`,
+      status: data.metrics.largestContentfulPaint < 2500 ? 'good' : data.metrics.largestContentfulPaint < 4000 ? 'fair' : 'poor'
+    },
+    {
+      name: 'Cumulative Layout Shift',
+      value: data.metrics.cumulativeLayoutShift.toFixed(3),
+      status: data.metrics.cumulativeLayoutShift < 0.1 ? 'good' : data.metrics.cumulativeLayoutShift < 0.25 ? 'fair' : 'poor'
+    }
+  ] : [];
   const getStatusColor = (status: string) => {
     const colors = {
       good: 'text-green-600 bg-green-50',
@@ -68,11 +92,15 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({ data }) => {
 
   // Chart data for load time breakdown
   const loadTimeData = {
-    labels: ['DNS Lookup', 'Connection', 'Server Response', 'Download', 'Render'],
+    labels: data.metrics ? 
+      ['First Contentful Paint', 'Largest Contentful Paint', 'Total Blocking Time'] :
+      ['DNS Lookup', 'Connection', 'Server Response', 'Download', 'Render'],
     datasets: [
       {
         label: 'Time (ms)',
-        data: [120, 200, 450, 380, 650],
+        data: data.metrics ? 
+          [data.metrics.firstContentfulPaint, data.metrics.largestContentfulPaint, data.metrics.totalBlockingTime] :
+          [120, 200, 450, 380, 650],
         backgroundColor: [
           'rgba(59, 130, 246, 0.8)',
           'rgba(16, 185, 129, 0.8)',
@@ -133,10 +161,27 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({ data }) => {
         ))}
       </div>
 
+      {/* Core Web Vitals */}
+      {coreWebVitals.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Core Web Vitals</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {coreWebVitals.map((vital, index) => (
+              <div key={index} className={`rounded-lg p-4 ${getStatusColor(vital.status)}`}>
+                <h4 className="font-semibold mb-1">{vital.name}</h4>
+                <div className="text-xl font-bold">{vital.value}</div>
+                <div className="text-sm capitalize">{vital.status}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-8 mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Load Time Breakdown</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            {data.metrics ? 'Core Metrics' : 'Load Time Breakdown'}
+          </h3>
           <div className="chart-container">
             <Bar data={loadTimeData} options={chartOptions} />
           </div>
@@ -159,6 +204,9 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({ data }) => {
           {data.loadTime > 2 && <li>• Optimize server response time</li>}
           {data.pageSize > 1000 && <li>• Compress images and enable gzip compression</li>}
           {data.requests > 30 && <li>• Reduce HTTP requests by combining files</li>}
+          {data.metrics?.firstContentfulPaint && data.metrics.firstContentfulPaint > 1800 && <li>• Improve First Contentful Paint by optimizing critical resources</li>}
+          {data.metrics?.largestContentfulPaint && data.metrics.largestContentfulPaint > 2500 && <li>• Optimize Largest Contentful Paint by improving image loading</li>}
+          {data.metrics?.cumulativeLayoutShift && data.metrics.cumulativeLayoutShift > 0.1 && <li>• Reduce Cumulative Layout Shift by setting image dimensions</li>}
           <li>• Enable browser caching</li>
           <li>• Use a Content Delivery Network (CDN)</li>
           <li>• Minimize and compress CSS/JavaScript files</li>

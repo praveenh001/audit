@@ -12,84 +12,40 @@ import {
   Clock,
   Download
 } from 'lucide-react';
+import { lighthouseApi, LighthouseResult } from '../services/lighthouseApi';
 import SecuritySection from './SecuritySection';
 import PerformanceSection from './PerformanceSection';
 import SEOSection from './SEOSection';
 import AccessibilitySection from './AccessibilitySection';
 import ScoreCard from './ScoreCard';
 
-interface AuditData {
-  url: string;
-  timestamp: string;
-  overallScore: number;
-  security: {
-    score: number;
-    ssl: boolean;
-    headers: number;
-    vulnerabilities: number;
-  };
-  performance: {
-    score: number;
-    loadTime: number;
-    pageSize: number;
-    requests: number;
-  };
-  seo: {
-    score: number;
-    metaTags: number;
-    headings: boolean;
-    sitemap: boolean;
-  };
-  accessibility: {
-    score: number;
-    issues: number;
-    compliance: string;
-  };
-}
-
 const AuditResults = () => {
   const { url } = useParams<{ url: string }>();
   const navigate = useNavigate();
-  const [auditData, setAuditData] = useState<AuditData | null>(null);
+  const [auditData, setAuditData] = useState<LighthouseResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!url) return;
 
-    // Simulate API call with mock data
-    setTimeout(() => {
+    const performAudit = async () => {
+      try {
+        setLoading(true);
+        setError(null);
       const decodedUrl = decodeURIComponent(url);
-      const mockData: AuditData = {
-        url: decodedUrl,
-        timestamp: new Date().toISOString(),
-        overallScore: Math.floor(Math.random() * 30) + 70,
-        security: {
-          score: Math.floor(Math.random() * 25) + 75,
-          ssl: Math.random() > 0.2,
-          headers: Math.floor(Math.random() * 3) + 7,
-          vulnerabilities: Math.floor(Math.random() * 3),
-        },
-        performance: {
-          score: Math.floor(Math.random() * 30) + 65,
-          loadTime: Math.random() * 2 + 1,
-          pageSize: Math.random() * 2000 + 500,
-          requests: Math.floor(Math.random() * 50) + 20,
-        },
-        seo: {
-          score: Math.floor(Math.random() * 25) + 70,
-          metaTags: Math.floor(Math.random() * 5) + 8,
-          headings: Math.random() > 0.3,
-          sitemap: Math.random() > 0.4,
-        },
-        accessibility: {
-          score: Math.floor(Math.random() * 35) + 65,
-          issues: Math.floor(Math.random() * 8),
-          compliance: ['AA', 'AAA'][Math.floor(Math.random() * 2)],
-        },
-      };
-      setAuditData(mockData);
+        
+        const result = await lighthouseApi.auditWebsite(decodedUrl);
+        setAuditData(result);
+      } catch (err) {
+        console.error('Audit failed:', err);
+        setError('Failed to audit website. Please check the URL and try again.');
+      } finally {
       setLoading(false);
-    }, 1500);
+      }
+    };
+
+    performAudit();
   }, [url]);
 
   const getScoreColor = (score: number) => {
@@ -112,24 +68,29 @@ const AuditResults = () => {
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Analyzing Website
+              Running Lighthouse Audit
             </h3>
             <p className="text-gray-600">
-              Please wait while we audit your website...
+              Analyzing performance, security, SEO, and accessibility...
             </p>
+            <div className="mt-4 text-sm text-gray-500">
+              This may take 30-60 seconds
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!auditData) {
+  if (error || !auditData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Audit Failed</h2>
-          <p className="text-gray-600 mb-4">Unable to audit the specified website.</p>
+          <p className="text-gray-600 mb-4">
+            {error || 'Unable to audit the specified website.'}
+          </p>
           <button
             onClick={() => navigate('/')}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -158,7 +119,7 @@ const AuditResults = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                  Audit Results
+                  Lighthouse Audit Results
                 </h1>
                 <p className="text-gray-600 mb-2">
                   {auditData.url}
@@ -166,6 +127,9 @@ const AuditResults = () => {
                 <div className="flex items-center text-sm text-gray-500">
                   <Clock className="w-4 h-4 mr-1" />
                   {new Date(auditData.timestamp).toLocaleString()}
+                </div>
+                <div className="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full inline-block">
+                  Powered by Google Lighthouse
                 </div>
               </div>
               <div className="mt-4 md:mt-0">
