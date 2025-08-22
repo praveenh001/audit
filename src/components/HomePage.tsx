@@ -107,10 +107,10 @@ const HomePage = () => {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Starting Audit...
+                  Connecting to Lighthouse API...
                 </div>
               ) : (
-                'Start Website Audit'
+                'Start Lighthouse Audit'
               )}
             </button>
           </form>
@@ -149,13 +149,16 @@ const HomePage = () => {
                   <Shield className="w-16 h-16 text-blue-600 mx-auto" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Analyzing Website
+                  Running Lighthouse Analysis
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Running comprehensive security and performance tests...
+                  Google Lighthouse is analyzing your website's performance, accessibility, SEO, and best practices...
                 </p>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                </div>
+                <div className="mt-3 text-sm text-gray-500">
+                  This may take 30-60 seconds
                 </div>
               </div>
             </div>
